@@ -6,28 +6,28 @@
 #include "Arduino.h"
 #include "Screwie_stepper.h"
 
-void Screwie_stepper::Screwie_stepper(byte bobinas[]) {
+const byte fullStep[] = {
+	B1000, // primeiro passo
+	B0010, // segundo passo
+	B0100, // terceiro passo
+	B0001, // quarto passo
+};
+	
+const byte doubleStep[] = {
+	B1010, // primeiro passo
+	B0110, // segundo passo
+	B0101, // terceiro passo
+	B1001, // quarto passo
+};
+
+Screwie_stepper::Screwie_stepper(uint8_t bobinas[4]) {
   passoMotor = 0;
-  bobinasMotor = bobinas;
-  inicializaSaidaParaBobina(bobinasMotor);
-
-  fullStep[] = {
-    B1000, // primeiro passo
-    B0010, // segundo passo
-    B0100, // terceiro passo
-    B0001, // quarto passo
-  };
-
-  doubleStep[] = {
-    B1010, // primeiro passo
-    B0110, // segundo passo
-    B0101, // terceiro passo
-    B1001, // quarto passo
-  };
+  inicializaSaidaParaBobina(bobinas);
 }
 
-void Screwie_stepper::inicializaSaidaParaBobina(byte bobinasMotor[]) {
-  for (byte bobina = 0 ; bobina < 4 ; bobina++) {
+void Screwie_stepper::inicializaSaidaParaBobina(uint8_t bobinas[4]) {
+  for (int bobina = 0 ; bobina < 4 ; bobina++) {
+	bobinasMotor[bobina] = bobinas[bobina];
     pinMode(bobinasMotor[bobina], OUTPUT);
   }
 }
@@ -55,7 +55,7 @@ void Screwie_stepper::meioPasso(int numeroDePassos, int velocidade, Direcao dire
             halfStepParaTras(numeroDePassos, velocidade);
             break;
         default : //passo inteiro e demais
-            halfStepParaDrente(numeroDePassos, velocidade);
+            halfStepParaFrente(numeroDePassos, velocidade);
     }
 }
 
@@ -127,14 +127,14 @@ void Screwie_stepper::halfStepParaTras(int numeroDePassos, int velocidade) {
   }
 }
 
-void Screwie_stepper::executaPassoMotorFrente(byte configuracoesPassos[]) {
+void Screwie_stepper::executaPassoMotorFrente(const byte configuracoesPassos[]) {
   byte configuracao = configuracoesPassos[passoMotor];
   executaMovimentoParaFrente(configuracao);
   avancaPasso();
 }
 
-void Screwie_stepper::executaPassoMotorTras(byte configuracoesPassos[]) {
-  byte configuracao = configuracoesPassosDoubleStep[passoMotor];
+void Screwie_stepper::executaPassoMotorTras(const byte configuracoesPassos[]) {
+  byte configuracao = configuracoesPassos[passoMotor];
   executaMovimentoParaTras(configuracao);
   recuaPasso();
 }
