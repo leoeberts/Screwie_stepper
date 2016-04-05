@@ -1,53 +1,42 @@
 /*
-  Screwie_stepper.h - Biblioteca para controle de passos do Screwie.
+  Screwie_stepper.h - Controls one stepper motor.
   Released into the public domain.
 */
 #ifndef Screwie_stepper_h
 #define Screwie_stepper_h
 
 #include "Arduino.h"
+#include "Screwie_motorCommand.h"
 
 extern const byte fullStep[];
 extern const byte doubleStep[];
 
-enum Direcao {
-  FRENTE,
-  TRAS
-};
-
-enum TipoPasso {
-  MEIO_PASSO,
-  PASSO_INTEIRO,
-  PASSO_DUPLO
-};
-
 class Screwie_stepper
 {
   public:
-    Screwie_stepper(uint8_t bobinas[4]);
-    void passo(int numeroDePassos, int velocidade, Direcao direcao);
-    void passo(int numeroDePassos, int velocidade, TipoPasso tipoPasso, Direcao direcao);    
+    Screwie_stepper(uint8_t coils[4]);
+    void executeCommand(Screwie_motorCommand command);    
 
   private:
-    uint8_t bobinasMotor[4];
-    int passoMotor;
+    uint8_t motorCoils[4];
+    int actualStep;
 
-    void inicializaSaidaParaBobina(uint8_t bobinas[4]);
-    void meioPasso(int numeroDePassos, int velocidade, Direcao direcao);
-    void passoInteiro(int numeroDePassos, int velocidade, Direcao direcao);
-    void passoDuplo(int numeroDePassos, int velocidade, Direcao direcao);
-    void fullStepParaFrente(int numeroDePassos, int velocidade);
-    void fullStepParaTras(int numeroDePassos, int velocidade);
-    void doubleStepParaFrente(int numeroDePassos, int velocidade);
-    void doubleStepParaTras(int numeroDePassos, int velocidade);
-    void halfStepParaFrente(int numeroDePassos,int velocidade);
-    void halfStepParaTras(int numeroDePassos, int velocidade);
-    void executaPassoMotorFrente(const byte configuracoesPassos[]);
-    void executaPassoMotorTras(const byte configuracoesPassos[]);
-    void executaMovimentoParaFrente(byte configuracao);
-    void executaMovimentoParaTras(byte configuracao);
-    void avancaPasso();
-    void recuaPasso();
+    void initCoilsPins(uint8_t coils[4]);	
+	void executeHalfStep(Screwie_motorCommand command);
+	void executeFullStep(Screwie_motorCommand command);
+	void executeDoubleStep(Screwie_motorCommand command);
+	void executeFullStepForward(Screwie_motorCommand command);
+	void executeFullStepBackward(Screwie_motorCommand command);
+	void executeDoubleStepForward(Screwie_motorCommand command);
+	void executeDoubleStepBackward(Screwie_motorCommand command);
+	void executeHalfStepForward(Screwie_motorCommand command);
+	void executeHalfStepBackward(Screwie_motorCommand command);
+	void executeStepForward(const byte stepConfiguration[]);
+	void executeStepBackward(const byte stepConfiguration[]);
+	void executeMovementForward(byte configuration);
+	void executeMovementBackward(byte configuration);
+	void incrementStep();
+	void decrementStep();
 };
 
 #endif

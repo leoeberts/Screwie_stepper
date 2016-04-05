@@ -1,177 +1,174 @@
 /*
-  Screwie_stepper.h - Biblioteca para controle de passos do Screwie.
+  Screwie_stepper.h - Controls one stepper motor.
   Released into the public domain.
 */
 
 #include "Arduino.h"
 #include "Screwie_stepper.h"
+#include "Screwie_motorCommand.h"
 
 const byte fullStep[] = {
-	B1000, // primeiro passo
-	B0010, // segundo passo
-	B0100, // terceiro passo
-	B0001, // quarto passo
+	B1000, // First step
+	B0010, // Second step
+	B0100, // Third step
+	B0001, // Fourth step
 };
 	
 const byte doubleStep[] = {
-	B1010, // primeiro passo
-	B0110, // segundo passo
-	B0101, // terceiro passo
-	B1001, // quarto passo
+	B1010, // First step
+	B0110, // Second step
+	B0101, // Third step
+	B1001, // Fourth step
 };
 
-Screwie_stepper::Screwie_stepper(uint8_t bobinas[4]) {
-  passoMotor = 0;
-  inicializaSaidaParaBobina(bobinas);
+Screwie_stepper::Screwie_stepper(uint8_t coils[4]) {
+  actualStep = 0;
+  initCoilsPins(coils);
 }
 
-void Screwie_stepper::inicializaSaidaParaBobina(uint8_t bobinas[4]) {
-  for (int bobina = 0 ; bobina < 4 ; bobina++) {
-	bobinasMotor[bobina] = bobinas[bobina];
-    pinMode(bobinasMotor[bobina], OUTPUT);
+void Screwie_stepper::initCoilsPins(uint8_t coils[4]) {
+  for (int coil = 0 ; coil < 4 ; coil++) {
+	motorCoils[coil] = coils[coil];
+    pinMode(motorCoils[coil], OUTPUT);
   }
 }
 
-void Screwie_stepper::passo(int numeroDePassos, int velocidade, Direcao direcao) {
-  passoInteiro(numeroDePassos, velocidade, direcao);
-}
-
-void Screwie_stepper::passo(int numeroDePassos, int velocidade, TipoPasso tipoPasso, Direcao direcao) {
-  switch (tipoPasso) {
-        case MEIO_PASSO:
-            meioPasso(numeroDePassos, velocidade, direcao);
+void Screwie_stepper::executeCommand(Screwie_motorCommand command) {
+  switch (command.getStepType()) {
+        case HALF_STEP:
+            executeHalfStep(command);
             break;
-        case PASSO_DUPLO:
-            passoDuplo(numeroDePassos, velocidade, direcao);
+        case DOUBLE_STEP:
+            executeDoubleStep(command);
             break;
-        default : //passo inteiro e demais
-            passoInteiro(numeroDePassos, velocidade, direcao);
+        default : //Full step
+            executeFullStep(command);
     }
 }
 
-void Screwie_stepper::meioPasso(int numeroDePassos, int velocidade, Direcao direcao) {
-  switch (direcao) {
-        case TRAS:
-            halfStepParaTras(numeroDePassos, velocidade);
+void Screwie_stepper::executeHalfStep(Screwie_motorCommand command) {
+  switch (command.getDirection()) {
+        case BACKWARDS:
+            executeHalfStepBackward(command);
             break;
-        default : //passo inteiro e demais
-            halfStepParaFrente(numeroDePassos, velocidade);
+        default : //Half step forward 
+            executeHalfStepForward(command);
     }
 }
 
-void Screwie_stepper::passoInteiro(int numeroDePassos, int velocidade, Direcao direcao) {
-  switch (direcao) {
-        case TRAS:
-            fullStepParaTras(numeroDePassos, velocidade);
+void Screwie_stepper::executeFullStep(Screwie_motorCommand command) {
+  switch (command.getDirection()) {
+        case BACKWARDS:
+            executeFullStepBackward(command);
             break;
-        default : //passo inteiro e demais
-            fullStepParaFrente(numeroDePassos, velocidade);
+        default : //Full step forward 
+            executeFullStepForward(command);
     }
 }
 
-void Screwie_stepper::passoDuplo(int numeroDePassos, int velocidade, Direcao direcao) {
-  switch (direcao) {
-        case TRAS:
-            doubleStepParaTras(numeroDePassos, velocidade);
+void Screwie_stepper::executeDoubleStep(Screwie_motorCommand command) {
+  switch (command.getDirection()) {
+        case BACKWARDS:
+            executeDoubleStepBackward(command);
             break;
-        default : //passo inteiro e demais
-            doubleStepParaFrente(numeroDePassos, velocidade);
+        default : //Double step forward 
+            executeDoubleStepForward(command);
     }
 }
 
-void Screwie_stepper::fullStepParaFrente(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum++) {
-    executaPassoMotorFrente(fullStep);
-    delay(velocidade);
+void Screwie_stepper::executeFullStepForward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum++) {
+    executeStepForward(fullStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::fullStepParaTras(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum++) {
-    executaPassoMotorTras(fullStep);
-    delay(velocidade);
+void Screwie_stepper::executeFullStepBackward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum++) {
+    executeStepBackward(fullStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::doubleStepParaFrente(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum++) {
-    executaPassoMotorFrente(doubleStep);
-    delay(velocidade);
+void Screwie_stepper::executeDoubleStepForward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum++) {
+    executeStepForward(doubleStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::doubleStepParaTras(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum++) {
-    executaPassoMotorTras(doubleStep);
-    delay(velocidade);
+void Screwie_stepper::executeDoubleStepBackward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum++) {
+    executeStepBackward(doubleStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::halfStepParaFrente(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum = stepNum + 2) {
-    executaPassoMotorFrente(fullStep);
-    delay(velocidade);
-    recuaPasso();
-    executaPassoMotorFrente(doubleStep);
-    delay(velocidade);
+void Screwie_stepper::executeHalfStepForward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum = stepNum + 2) {
+    executeStepForward(fullStep);
+    delay(command.getSpeed());
+    decrementStep();
+    executeStepForward(doubleStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::halfStepParaTras(int numeroDePassos, int velocidade) {
-  for ( int stepNum = 0; stepNum < numeroDePassos; stepNum = stepNum + 2) {
-    executaPassoMotorTras(fullStep);
-    delay(velocidade);
-    avancaPasso();
-    executaPassoMotorTras(doubleStep);
-    delay(velocidade);
+void Screwie_stepper::executeHalfStepBackward(Screwie_motorCommand command) {
+  for ( int stepNum = 0; stepNum < command.getNumberOfSteps(); stepNum = stepNum + 2) {
+    executeStepBackward(fullStep);
+    delay(command.getSpeed());
+    incrementStep();
+    executeStepBackward(doubleStep);
+    delay(command.getSpeed());
   }
 }
 
-void Screwie_stepper::executaPassoMotorFrente(const byte configuracoesPassos[]) {
-  byte configuracao = configuracoesPassos[passoMotor];
-  executaMovimentoParaFrente(configuracao);
-  avancaPasso();
+void Screwie_stepper::executeStepForward(const byte stepConfiguration[]) {
+  byte configuration = stepConfiguration[actualStep];
+  executeMovementForward(configuration);
+  incrementStep();
 }
 
-void Screwie_stepper::executaPassoMotorTras(const byte configuracoesPassos[]) {
-  byte configuracao = configuracoesPassos[passoMotor];
-  executaMovimentoParaTras(configuracao);
-  recuaPasso();
+void Screwie_stepper::executeStepBackward(const byte stepConfiguration[]) {
+  byte configuration = stepConfiguration[actualStep];
+  executeMovementBackward(configuration);
+  decrementStep();
 }
 
-void Screwie_stepper::executaMovimentoParaFrente(byte configuracao) {
-  for (byte bobina = 0 ; bobina < 4 ; bobina++) {
-    if (configuracao & (1 << bobina)) {
-      digitalWrite(bobinasMotor[bobina], HIGH);
+void Screwie_stepper::executeMovementForward(byte configuration) {
+  for (byte coil = 0 ; coil < 4 ; coil++) {
+    if (configuration & (1 << coil)) {
+      digitalWrite(motorCoils[coil], HIGH);
     } else {
-      digitalWrite(bobinasMotor[bobina], LOW);
+      digitalWrite(motorCoils[coil], LOW);
     }
   }
 }
 
-void Screwie_stepper::executaMovimentoParaTras(byte configuracao) {
-  for (byte bobina = 0 ; bobina < 4 ; bobina++) {
-    if (configuracao & (1 << bobina)) {
-      digitalWrite(bobinasMotor[bobina], LOW);
+void Screwie_stepper::executeMovementBackward(byte configuration) {
+  for (byte coil = 0 ; coil < 4 ; coil++) {
+    if (configuration & (1 << coil)) {
+      digitalWrite(motorCoils[coil], LOW);
     } else {
-      digitalWrite(bobinasMotor[bobina], HIGH);
+      digitalWrite(motorCoils[coil], HIGH);
     }
   }
 }
 
-void Screwie_stepper::avancaPasso() {
-  if (passoMotor == 3) {
-    passoMotor = 0;
+void Screwie_stepper::incrementStep() {
+  if (actualStep == 3) {
+    actualStep = 0;
   } else {
-    passoMotor++;
+    actualStep++;
   }
 }
 
-void Screwie_stepper::recuaPasso() {
-  if (passoMotor == 0) {
-    passoMotor = 3;
+void Screwie_stepper::decrementStep() {
+  if (actualStep == 0) {
+    actualStep = 3;
   } else {
-    passoMotor--;
+    actualStep--;
   }
 }
 
